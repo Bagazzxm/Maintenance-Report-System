@@ -239,19 +239,42 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    function submitData(form) {
+// FUNGSI KIRIM DATA KE GOOGLE SHEETS VIA FETCH (TANPA google.script.run)
+    async function submitData(form) {
         event.preventDefault();
         const btn = document.getElementById('submitBtn');
+        
+        // GANTI URL DI BAWAH INI DENGAN URL WEB APP KAMU
+        const SCRIPT_URL = "https://bagazzxm.github.io/Maintenance-Report-System/";
+
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> MENGIRIM...';
 
-        google.script.run.withSuccessHandler(function(res) {
-            Swal.fire({ icon: 'success', title: 'Berhasil!', text: res, confirmButtonColor: '#0d47a1' });
+        // Mengambil data dari form
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', // Penting untuk menghindari error CORS di GitHub Pages
+                body: JSON.stringify(data)
+            });
+
+            // Karena mode 'no-cors', kita tidak bisa membaca pesan respon secara detail, 
+            // tapi data akan tetap masuk ke Spreadsheet.
+            Swal.fire({ 
+                icon: 'success', 
+                title: 'Data Terkirim!', 
+                text: 'Silakan cek Spreadsheet untuk memastikan data No. 1 sudah masuk.', 
+                confirmButtonColor: '#0d47a1' 
+            });
             form.reset();
+        } catch (error) {
+            Swal.fire({ icon: 'error', title: 'Gagal', text: error.message });
+        } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="bi bi-cloud-arrow-up-fill me-2"></i> SIMPAN LAPORAN';
-        }).processForm(form);
+        }
     }
 </script>
-</body>
-</html>
