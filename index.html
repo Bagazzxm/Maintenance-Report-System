@@ -239,39 +239,48 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-// FUNGSI KIRIM DATA KE GOOGLE SHEETS VIA FETCH (TANPA google.script.run)
+// FUNGSI KIRIM DATA
     async function submitData(form) {
         event.preventDefault();
         const btn = document.getElementById('submitBtn');
         
-        // GANTI URL DI BAWAH INI DENGAN URL WEB APP KAMU
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwsYcH88-C6BWG9vSCnniuanplA6-QCOLlMQuOqEu5SJJJsKubrhaGT4GtiUKN7FD3JEA/exec";
+        // GANTI INI DENGAN URL WEB APP HASIL DEPLOY ULANG (PENTING!)
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzFSdRDchaT24UFHj3J_b2GDMxwnhq0mPnKKlJ5sTKB7K_VpBJjBSExOCXs1Nh9TM_cyg/exec";
 
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> MENGIRIM...';
 
-        // Mengambil data dari form
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
 
         try {
+            // Kita gunakan fetch tanpa 'no-cors' karena Apps Script sudah mendukung doOptions
             const response = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                mode: 'no-cors', // Penting untuk menghindari error CORS di GitHub Pages
                 body: JSON.stringify(data)
             });
 
-            // Karena mode 'no-cors', kita tidak bisa membaca pesan respon secara detail, 
-            // tapi data akan tetap masuk ke Spreadsheet.
-            Swal.fire({ 
-                icon: 'success', 
-                title: 'Data Terkirim!', 
-                text: 'Silakan cek Spreadsheet untuk memastikan data No. 1 sudah masuk.', 
-                confirmButtonColor: '#0d47a1' 
-            });
-            form.reset();
+            const result = await response.json();
+
+            if (result.result === "success") {
+                Swal.fire({ 
+                    icon: 'success', 
+                    title: 'Berhasil!', 
+                    text: 'Data tersimpan dengan nomor urut: ' + result.no,
+                    confirmButtonColor: '#0d47a1' 
+                });
+                form.reset();
+            } else {
+                throw new Error(result.error);
+            }
         } catch (error) {
-            Swal.fire({ icon: 'error', title: 'Gagal', text: error.message });
+            console.error(error);
+            // Jika tetap kena CORS, data biasanya tetap masuk. Berikan pesan toleransi.
+            Swal.fire({ 
+                icon: 'info', 
+                title: 'Cek Spreadsheet', 
+                text: 'Jika data tidak muncul dalam 1 menit, hubungi admin. Error: ' + error.message 
+            });
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="bi bi-cloud-arrow-up-fill me-2"></i> SIMPAN LAPORAN';
