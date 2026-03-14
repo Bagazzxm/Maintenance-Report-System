@@ -239,13 +239,12 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-// FUNGSI KIRIM DATA
-    async function submitData(form) {
+async function submitData(form) {
         event.preventDefault();
         const btn = document.getElementById('submitBtn');
         
-        // GANTI INI DENGAN URL WEB APP HASIL DEPLOY ULANG (PENTING!)
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzFSdRDchaT24UFHj3J_b2GDMxwnhq0mPnKKlJ5sTKB7K_VpBJjBSExOCXs1Nh9TM_cyg/exec";
+        // --- GANTI URL DI BAWAH INI ---
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3eH3Rv-B1Mk67HtCCs1a79YgNmCB34b3N1ov6xJORggVnLYVSKdm_a2f7-S06ggbYXw/exec"; 
 
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> MENGIRIM...';
@@ -254,32 +253,35 @@
         const data = Object.fromEntries(formData.entries());
 
         try {
-            // Kita gunakan fetch tanpa 'no-cors' karena Apps Script sudah mendukung doOptions
+            // Mengirim data sebagai JSON mentah (Raw JSON)
             const response = await fetch(SCRIPT_URL, {
                 method: 'POST',
                 body: JSON.stringify(data)
             });
 
+            // Karena kita sudah menangani doOptions di Apps Script, 
+            // kita bisa membaca respon balik.
             const result = await response.json();
 
             if (result.result === "success") {
-                Swal.fire({ 
-                    icon: 'success', 
-                    title: 'Berhasil!', 
-                    text: 'Data tersimpan dengan nomor urut: ' + result.no,
-                    confirmButtonColor: '#0d47a1' 
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil Disimpan!',
+                    text: 'Data masuk sebagai No: ' + result.no,
+                    confirmButtonColor: '#0d47a1'
                 });
                 form.reset();
             } else {
-                throw new Error(result.error);
+                throw new Error(result.message);
             }
         } catch (error) {
-            console.error(error);
-            // Jika tetap kena CORS, data biasanya tetap masuk. Berikan pesan toleransi.
-            Swal.fire({ 
-                icon: 'info', 
-                title: 'Cek Spreadsheet', 
-                text: 'Jika data tidak muncul dalam 1 menit, hubungi admin. Error: ' + error.message 
+            console.error('Error:', error);
+            // Alert Fallback jika koneksi terputus/CORS tetap muncul tapi data kemungkinan masuk
+            Swal.fire({
+                icon: 'warning',
+                title: 'Cek Spreadsheet',
+                text: 'Jika data tidak muncul, pastikan URL Script benar. Details: ' + error.message,
+                confirmButtonColor: '#0d47a1'
             });
         } finally {
             btn.disabled = false;
